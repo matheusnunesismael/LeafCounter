@@ -42,8 +42,16 @@ def find_n(center, neig):
 def in_limits(p, limits):
     return p[0] < limits[0] and p[0] >= 0 and p[1] < limits[1] and p[1] >= 0
 
+# rotaciona a sequencia de freeman para obter o menor valor TO-DO
+def rot_freeman(freeman):
+    strf = ""
+    for i in freeman:
+        strf += str(i)
+    int freeMin = int(strf)
+    
+
 # passos 3 a 5 do Agoritmo Seguidor de Fronteira
-def frontier_explorator(b, c, matrix, b_0, frontier):
+def frontier_explorator(b, c, matrix, b_0, frontier, freeman):
     height = np.shape(matrix)[0]
     width  = np.shape(matrix)[1]
     # flag booleana que determina se o laço deve continuar. Torna-se verdadeira quando b=b_0
@@ -68,7 +76,10 @@ def frontier_explorator(b, c, matrix, b_0, frontier):
         while np.average(matrix[nk[0], nk[1]])>WHITE:
             cont_n = (cont_n+1)%8
             nk = b + neighbors["n_"+str(cont_n)]
-   
+
+        # adiciona a posição do proximo pixel a sequencia de freeman
+        freeman += [7-cont_n]
+
         # cria a variável "k_minus_1", que guarda o índice do vizinho anterior
         k_minus_1 = (cont_n-1)%8
 
@@ -82,11 +93,12 @@ def frontier_explorator(b, c, matrix, b_0, frontier):
         # verifica se b já voltou pro começo pra continuar a percorrer a fronteira
         if np.array_equal(b,b_0):
             back_to_beginning = True
+    return (frontier, freeman)
 
-    return frontier
 # inicia o Algoritmo Seguidor de Fronteira com os Passos 1 e 2
 def frontier_finder(b_0, matrix):
     all_done = False
+    freeman = []
     folha = True
 
     # percorre os pixels brancos da imagem até encontrar o primeiro pixel não-branco
@@ -115,21 +127,23 @@ def frontier_finder(b_0, matrix):
                 b_0 = achou[0,:]
                 c = b_0 + neighbors["n_0"]
                 cont_n = 0
-
+    freeman += [7-cont_n]
     # passa o valor do atual pixel não-branco (c) para b, e passa o valor de b_0 para c
     b, c = c, b_0
     
     # adiciona b_0 e b para a lista de pixels percorridos
     frontier = [b_0, b] 
-    frontier = frontier + frontier_explorator(b, c, matrix, b_0, frontier)
+    frontier_resp, freeman_resp = frontier_explorator(b, c, matrix, b_0, frontier, freeman)
+    frontier += frontier_resp
+    freeman += freeman_resp
     if len(frontier)<50:
         folha = False
 
-    return (frontier, all_done, b_0, folha)
+    return (frontier, all_done, b_0, folha, freeman)
 
 def segmentation(img, last_b_0):
     # chama o algoritmo seguidor de fronteira e armazena sua fronteira em "frontier"
-    (frontier, all_done, last_b_0, folha) = frontier_finder(last_b_0, img)
+    (frontier, all_done, last_b_0, folha, freeman) = frontier_finder(last_b_0, img)
     
     if not all_done:
         frontier_matrix = np.array(frontier)
@@ -171,18 +185,16 @@ def segmentation(img, last_b_0):
         img[min_y:max_y+1, min_x:max_x+1,:] = np.multiply(img[min_y:max_y+1, min_x:max_x+1], np.logical_not(mask3D))
 
         # troca fundos pretos da aplicação da máscara por fundos brancos
-        
         new_img = np.where(mask3D==[0],[255,255,255], new_img)
         img_part = np.where(mask3D==[0], img[min_y:max_y+1, min_x:max_x+1], [255,255,255])
         img[min_y:max_y+1, min_x:max_x+1] = img_part
               
-        
         # transforma imagem de borda em imagem RGB
         # determina os valores de "border_rgb", trocando fundo preto da imagem de borda por fundo branco e deixa o contorno preto
         border_test = np.where(border_img==0, 255, 0)
         border_rgb = np.stack((border_test, border_test, border_test),axis=-1)
 
-        return (border_rgb, new_img, img, all_done, last_b_0, folha)
+        return (border_rgb, new_img, img, all_done, last_b_0, folha, freeman)
     else:
         return (0,0,0, all_done, last_b_0, folha)
 
@@ -207,7 +219,7 @@ def open_img_save_subimgs(img_num):
     time_before_time = time.time()
     while not all_done:
         t0 = time.time()
-        border_rgb, new_img, img, all_done, last_b_0, folha = segmentation(img, last_b_0)
+        border_rgb, new_img, img, all_done, last_b_0, folha, freeman = segmentation(img, last_b_0)
         if not all_done and folha:
             subimg_counter+=1
             str_num_sub = str(subimg_counter).zfill(2)
@@ -221,6 +233,7 @@ def open_img_save_subimgs(img_num):
             print("Subimagem "+str_num_sub+" salva.")
             print(f"Tempo: {t1-t0}")
             print("-"*20)
+            print(freeman)
 
     time_after_time = time.time()
     print("Imagem "+str_num)

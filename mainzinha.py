@@ -157,7 +157,7 @@ def frontier_finder(last_b_0, matrix):
     frontier += frontier_resp
     freeman += freeman_resp
 
-    if len(frontier) < 50 or len(frontier) >= 19500:
+    if len(frontier) < 50 or len(frontier) >= 25000:
         folha = False
 
     return (frontier, all_done, b_0, folha, freeman)
@@ -242,9 +242,9 @@ def open_img_save_subimgs(img_num, df):
             subimg_counter+=1
             str_num_sub = str(subimg_counter).zfill(2)
             
-            new_img_path = "Folhas/"+str_num+"-"+str_num_sub+".png"
+            new_img_path = "Folhas/Teste"+str_num+"-"+str_num_sub+".png"
             cv2.imwrite(new_img_path, new_img)
-            border_path = "Folhas/"+str_num+"-"+str_num_sub+"-P.png"
+            border_path = "Folhas/Teste"+str_num+"-"+str_num_sub+"-P.png"
             cv2.imwrite(border_path, border_rgb)
             t1 = time.time()
             
@@ -276,6 +276,8 @@ def open_img_save_subimgs(img_num, df):
     print("-"*20)
     return df
 
+print("Aguarde, segmentação em andamento.")
+print("O tempo médio para cada imagem depende da máquina, mas pode levar de 30 a 230 segundos.")
 df = pd.DataFrame(columns = ['ID Imagem', 'ID Folha', 'Perímetro', 'Cadeia de Freeman', 'Primeira Diferença'])
 
 df_data = pd.DataFrame(columns = ['ID Imagem', 'ID Folha', 'Perímetro', 'Cadeia de Freeman', 'Primeira Diferença'])

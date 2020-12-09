@@ -45,7 +45,7 @@ def find_n(center, neig):
 def in_limits(p, limits):
     return p[0] < limits[0] and p[0] >= 0 and p[1] < limits[1] and p[1] >= 0
 
-# rotaciona a sequencia de freeman para obter o menor valor inteiro //// TO-DO
+# rotaciona a sequencia de freeman para obter o menor valor inteiro
 def rot_freeman(freeman):
     free_min_str = freeman
     free_min = int(freeman)
@@ -72,7 +72,7 @@ def frontier_explorator(b, c, matrix, b_0, frontier, freeman):
     # flag booleana que determina se o laço deve continuar. Torna-se verdadeira quando b=b_0
     back_to_beginning = False
     border = False
-
+    freeman_cont = 0
     while not back_to_beginning:
         # verifica qual o n do c atual
         cont_n = find_n(b, c)
@@ -94,7 +94,7 @@ def frontier_explorator(b, c, matrix, b_0, frontier, freeman):
 
         # adiciona a posição do proximo pixel a sequencia de freeman
         freeman += freeman_dict[cont_n]
-
+        
         # cria a variável "k_minus_1", que guarda o índice do vizinho anterior
         k_minus_1 = (cont_n-1)%8
 
@@ -111,7 +111,7 @@ def frontier_explorator(b, c, matrix, b_0, frontier, freeman):
     return (frontier, freeman)
 
 # inicia o Algoritmo Seguidor de Fronteira com os Passos 1 e 2
-def frontier_finder(b_0, matrix):
+def frontier_finder(last_b_0, matrix):
     all_done = False
     freeman = ""
     folha = True
@@ -121,7 +121,7 @@ def frontier_finder(b_0, matrix):
     nao_nulo = avg<240
     achou = np.transpose(np.nonzero(nao_nulo))
     if len(achou)<20:
-        return ([], True, b_0, folha, freeman)
+        return ([], True, last_b_0, folha, freeman)
     while achou[0,0] == 0:
         achou = np.delete(achou,0,0)
     b_0 = achou[0,:]
@@ -154,7 +154,8 @@ def frontier_finder(b_0, matrix):
     frontier_resp, freeman_resp = frontier_explorator(b, c, matrix, b_0, frontier, freeman)
     frontier += frontier_resp
     freeman += freeman_resp
-    if len(frontier)<50:
+
+    if len(frontier) < 50 or len(frontier) >= 19500:
         folha = False
 
     return (frontier, all_done, b_0, folha, freeman)
@@ -260,11 +261,11 @@ def open_img_save_subimgs(img_num, df):
                 'Primeira Diferença': first_difference
             }
             df = df.append(df_row, ignore_index = True)
-
-            print("Subimagem "+str_num_sub+" salva.")
+            '''
+            print("Subimagem "str_num+"-"+str_num_sub+" salva.")
             print(f"Tempo: {t1-t0}")
             print("-"*20)
-            sys.exit()
+            '''
             
 
     time_after_time = time.time()
@@ -275,7 +276,9 @@ def open_img_save_subimgs(img_num, df):
 
 df = pd.DataFrame(columns = ['ID Imagem', 'ID Folha', 'Perímetro', 'Cadeia de Freeman', 'Primeira Diferença'])
 
-df_data = open_img_save_subimgs(int(sys.argv[1]), df)
+df_data = pd.DataFrame(columns = ['ID Imagem', 'ID Folha', 'Perímetro', 'Cadeia de Freeman', 'Primeira Diferença'])
+for i in range(1, 16):
+    df_data = df_data.append(open_img_save_subimgs(i, df), ignore_index = True)
 
 df_data.to_csv("Resultados.csv", index=False)
 

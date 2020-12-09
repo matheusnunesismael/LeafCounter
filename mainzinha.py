@@ -62,7 +62,7 @@ def rot_freeman(freeman):
 def first_dif(freeman):
     freman_len = len(freeman)
     first_dif_str = str((int(freeman[0]) - int(freeman[freman_len-1]))%8)
-    for i in range(1, freman_len)):
+    for i in range(1, freman_len):
         first_dif_str += str((int(freeman[i]) - int(freeman[i-1]))%8)
     return first_dif_str
 

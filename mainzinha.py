@@ -1,6 +1,7 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import cv2
+import pandas as pd
 import copy
 import time
 from scipy import ndimage
@@ -31,6 +32,8 @@ inverse_neighbors = {
     "[1 1]"  : 5
 }
 
+freeman_dict = ['4', '3', '2', '1', '0', '7', '6', '5']
+
 # função para buscar no dicionário em qual posição "neig" está em relação a "center"
 def find_n(center, neig):
     delta = neig - center
@@ -42,13 +45,25 @@ def find_n(center, neig):
 def in_limits(p, limits):
     return p[0] < limits[0] and p[0] >= 0 and p[1] < limits[1] and p[1] >= 0
 
-# rotaciona a sequencia de freeman para obter o menor valor TO-DO
+# rotaciona a sequencia de freeman para obter o menor valor inteiro //// TO-DO
 def rot_freeman(freeman):
-    strf = ""
-    for i in freeman:
-        strf += str(i)
-    int freeMin = int(strf)
-    
+    free_min_str = freeman
+    free_min = int(freeman)
+    for i in range(len(freeman)):
+        new_freeman = freeman[len(freeman)-1] + freeman[:len(freeman)-1]
+        if(int(new_freeman) < free_min):
+            free_min = int(new_freeman)
+            free_min_str = new_freeman
+        freeman = new_freeman
+    return free_min_str
+
+# pega a sequencia de diferenças no caminho da sequencia de freeman
+def first_dif(freeman):
+    first_dif_str = str((int(freeman[0]) - int(freeman[len(freeman)-1]))%8)
+    for i in range(1, len(freeman)):
+        first_dif_str += str((int(freeman[i]) - int(freeman[i-1]))%8)
+    return first_dif_str
+
 
 # passos 3 a 5 do Agoritmo Seguidor de Fronteira
 def frontier_explorator(b, c, matrix, b_0, frontier, freeman):
@@ -78,7 +93,7 @@ def frontier_explorator(b, c, matrix, b_0, frontier, freeman):
             nk = b + neighbors["n_"+str(cont_n)]
 
         # adiciona a posição do proximo pixel a sequencia de freeman
-        freeman += [7-cont_n]
+        freeman += freeman_dict[cont_n]
 
         # cria a variável "k_minus_1", que guarda o índice do vizinho anterior
         k_minus_1 = (cont_n-1)%8
@@ -98,7 +113,7 @@ def frontier_explorator(b, c, matrix, b_0, frontier, freeman):
 # inicia o Algoritmo Seguidor de Fronteira com os Passos 1 e 2
 def frontier_finder(b_0, matrix):
     all_done = False
-    freeman = []
+    freeman = ""
     folha = True
 
     # percorre os pixels brancos da imagem até encontrar o primeiro pixel não-branco
@@ -106,7 +121,7 @@ def frontier_finder(b_0, matrix):
     nao_nulo = avg<240
     achou = np.transpose(np.nonzero(nao_nulo))
     if len(achou)<20:
-        return ([], True, b_0, folha)
+        return ([], True, b_0, folha, freeman)
     while achou[0,0] == 0:
         achou = np.delete(achou,0,0)
     b_0 = achou[0,:]
@@ -122,12 +137,15 @@ def frontier_finder(b_0, matrix):
         if cont_n==0:
             achou = np.delete(achou,0,0)
             if len(achou)==0:
-                return ([], True, b_0, folha)
+                return ([], True, b_0, folha, freeman)
             else:
                 b_0 = achou[0,:]
                 c = b_0 + neighbors["n_0"]
                 cont_n = 0
-    freeman += [7-cont_n]
+
+    # adiciona a primeira mudança de direção à sequencia de freeman
+    freeman += freeman_dict[cont_n]           
+   
     # passa o valor do atual pixel não-branco (c) para b, e passa o valor de b_0 para c
     b, c = c, b_0
     
@@ -194,51 +212,71 @@ def segmentation(img, last_b_0):
         border_test = np.where(border_img==0, 255, 0)
         border_rgb = np.stack((border_test, border_test, border_test),axis=-1)
 
-        return (border_rgb, new_img, img, all_done, last_b_0, folha, freeman)
+        # pega o perimetro da sub-imagem
+        perimeter = len(frontier)
+
+        return (border_rgb, new_img, img, all_done, last_b_0, folha, freeman, perimeter)
     else:
-        return (0,0,0, all_done, last_b_0, folha)
+        return (0,0,0, all_done, last_b_0, folha, freeman, 0)
 
 # img_num é o inteiro correspondente à iteração do laço
-def open_img_save_subimgs(img_num):
+def open_img_save_subimgs(img_num, df):
     str_num = str(img_num).zfill(2)
     path = "Folhas/Teste"+str_num+".png"
     img = cv2.imread(path)
     height = np.shape(img)[0]
     width = np.shape(img)[1]
-
-    # cria pasta que irá armazenar as saidas
-    if not os.path.isdir("./Saidas"):
-        os.mkdir( "Saidas", 755 )
-    folder_path = "Saidas/"+ (str(img_num) if img_num>9 else "0"+str(img_num))
-    if not os.path.isdir(folder_path):
-        os.mkdir( folder_path, 755 )
     
     all_done = False
     subimg_counter = 0
     last_b_0 = np.array([0,1])
     time_before_time = time.time()
+    name = "Teste"+str_num
     while not all_done:
         t0 = time.time()
-        border_rgb, new_img, img, all_done, last_b_0, folha, freeman = segmentation(img, last_b_0)
+        border_rgb, new_img, img, all_done, last_b_0, folha, freeman, perimeter = segmentation(img, last_b_0)
         if not all_done and folha:
             subimg_counter+=1
             str_num_sub = str(subimg_counter).zfill(2)
             
-            new_img_path = folder_path+"/"+str_num_sub+".png"
+            new_img_path = "Folhas/"+str_num+"-"+str_num_sub+".png"
             cv2.imwrite(new_img_path, new_img)
-            border_path = folder_path+"/"+str_num_sub+"-P.png"
+            border_path = "Folhas/"+str_num+"-"+str_num_sub+"-P.png"
             cv2.imwrite(border_path, border_rgb)
             t1 = time.time()
             
+            # rotaciona a sequencia de freeman para obter o menor valor inteiro
+            freeman = rot_freeman(freeman)
+
+            # pega o vetor de diferenças da cadeia de freeman
+            first_difference = first_dif(freeman)
+
+            # adiciona a linha referente a sub-imagem ao dataframe que irá gerar o .csv
+            df_row = {
+                'ID Imagem': name, 
+                'ID Folha': str_num_sub, 
+                'Perímetro': perimeter, 
+                'Cadeia de Freeman': freeman, 
+                'Primeira Diferença': first_difference
+            }
+            df = df.append(df_row, ignore_index = True)
+
             print("Subimagem "+str_num_sub+" salva.")
             print(f"Tempo: {t1-t0}")
             print("-"*20)
-            print(freeman)
+            sys.exit()
+            
 
     time_after_time = time.time()
     print("Imagem "+str_num)
     print(f"Tempo Total: {time_after_time-time_before_time}")
     print("-"*20)
+    return df
 
-open_img_save_subimgs(int(sys.argv[1]))
+df = pd.DataFrame(columns = ['ID Imagem', 'ID Folha', 'Perímetro', 'Cadeia de Freeman', 'Primeira Diferença'])
 
+df_data = open_img_save_subimgs(int(sys.argv[1]), df)
+
+df_data.to_csv("Resultados.csv", index=False)
+
+print(df_data)

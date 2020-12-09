@@ -50,7 +50,8 @@ def rot_freeman(freeman):
     free_min_str = freeman
     free_min = int(freeman)
     for i in range(len(freeman)):
-        new_freeman = freeman[len(freeman)-1] + freeman[:len(freeman)-1]
+        freman_len_minus_1 = len(freeman)-1
+        new_freeman = freeman[freman_len_minus_1] + freeman[:freman_len_minus_1]
         if(int(new_freeman) < free_min):
             free_min = int(new_freeman)
             free_min_str = new_freeman
@@ -59,8 +60,9 @@ def rot_freeman(freeman):
 
 # pega a sequencia de diferenças no caminho da sequencia de freeman
 def first_dif(freeman):
-    first_dif_str = str((int(freeman[0]) - int(freeman[len(freeman)-1]))%8)
-    for i in range(1, len(freeman)):
+    freman_len = len(freeman)
+    first_dif_str = str((int(freeman[0]) - int(freeman[freman_len-1]))%8)
+    for i in range(1, freman_len)):
         first_dif_str += str((int(freeman[i]) - int(freeman[i-1]))%8)
     return first_dif_str
 
@@ -130,7 +132,7 @@ def frontier_finder(last_b_0, matrix):
     c = b_0 + neighbors["n_1"]
 
     # procura o primeiro vizinho não branco para ser o próximo c
-    cont_n = 1
+    cont_n = 1  #testar se cont_n=0 não funciona
     while np.average(matrix[c[0], c[1]])>WHITE:
         c = b_0 + neighbors["n_"+str(cont_n)]
         cont_n = (cont_n+1)%8

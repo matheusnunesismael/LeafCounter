@@ -259,10 +259,11 @@ def open_img_save_subimgs(img_num, df):
                 'ID Imagem': name, 
                 'ID Folha': str_num_sub, 
                 'Perímetro': perimeter, 
-                'Cadeia de Freeman': freeman, 
                 'Primeira Diferença': first_difference
             }
             df = df.append(df_row, ignore_index = True)
+            
+            # descomente o código a seguir para checar o tempo para cada sub imagem
             '''
             print("Subimagem "str_num+"-"+str_num_sub+" salva.")
             print(f"Tempo: {t1-t0}")
@@ -271,19 +272,38 @@ def open_img_save_subimgs(img_num, df):
             
 
     time_after_time = time.time()
+    total_time = time_after_time-time_before_time
     print("Imagem "+str_num)
-    print(f"Tempo Total: {time_after_time-time_before_time}")
+    print(f"Folhas identificadas: {subimg_counter} folhas")
+    print(f"Tempo para esta imagem: {total_time} segundos")
+    avg_time = total_time/subimg_counter
+    print(f"Tempo médio por folha nesta imagem: {avg_time} segundos")
     print("-"*20)
-    return df
+    return df, subimg_counter
 
 print("Aguarde, segmentação em andamento.")
 print("O tempo médio para cada imagem depende da máquina, mas pode levar de 30 a 230 segundos.")
-df = pd.DataFrame(columns = ['ID Imagem', 'ID Folha', 'Perímetro', 'Cadeia de Freeman', 'Primeira Diferença'])
+print("-"*20)
+df = pd.DataFrame(columns = ['ID Imagem', 'ID Folha', 'Perímetro', 'Primeira Diferença'])
 
-df_data = pd.DataFrame(columns = ['ID Imagem', 'ID Folha', 'Perímetro', 'Cadeia de Freeman', 'Primeira Diferença'])
+t_ini = time.time()
+total_folhas = 0
+df_data = pd.DataFrame(columns = ['ID Imagem', 'ID Folha', 'Perímetro', 'Primeira Diferença'])
 for i in range(1, 16):
-    df_data = df_data.append(open_img_save_subimgs(i, df), ignore_index = True)
+    df_imagem, subimg_counter = open_img_save_subimgs(i, df)
+    total_folhas += subimg_counter
+    df_data = df_data.append(df_imagem, ignore_index = True)
+t_fim = time.time()
+
+t_total = t_fim-t_ini
+
+print("SEGMENTAÇÃO CONCLUÍDA!")
+print("-"*20)
+print(f"Tempo total: {int(t_total/60)} minutos e {int(t_total%60)} segundos") 
+print(f"Total de folhas segmentadas: {total_folhas} folhas")
+print(f"Tempo médio por folha: {t_total/total_folhas} segundos")
 
 df_data.to_csv("Resultados.csv", index=False)
 
+print("-"*20)
 print(df_data)

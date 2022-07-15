@@ -1,3 +1,7 @@
-# Trabalho de PID
+# LeafCounter
 
-Segmentação de imagens de folhas a partir de arquivos pré-definidos com posterior salvamento das imagens das folhas segmentadas e criação de um CSV com informações de perímetro e Cadeia de Freeman de cada folha.
+Project developed by  [@MahatKC](https://www.github.com/MahatKC), [@spalshzzz](https://github.com/spalshzzz) and [@matheusnunesismael](https://github.com/matheusnunesismael) in 2020.
+
+This project was an assignment for the Digital Image Processing class we took in our 3th year of Computer Science.
+
+Coded in Python, it does image segmentation from a set of files provided by the class's professor. We segment leaves from these images and save them in separate files, creating a CSV with information about each leaf and the Freeman Chain of each one.
